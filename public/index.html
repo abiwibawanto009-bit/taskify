@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Taskify // Smart Kanban Board</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="A premium Smart Kanban Board PWA for managing tasks offline with push notifications.">
+  <meta name="theme-color" content="#6366f1">
+  
+  <!-- PWA Manifest & Icons -->
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <!-- Top Glassmorphic Navigation -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo">
+        <i class="fa-solid fa-list-check logo-icon"></i>
+        <span>Taskify</span>
+      </div>
+      <div class="badge status-badge online-only" id="connection-status">
+        <span class="status-dot green"></span> Connected
+      </div>
+    </div>
+    
+    <div class="header-right">
+      <!-- PWA & Push buttons -->
+      <button id="btn-install" class="btn btn-secondary btn-icon-text hidden" title="Install App">
+        <i class="fa-solid fa-download"></i> Install App
+      </button>
+      <button id="btn-push-subscribe" class="btn btn-secondary btn-icon-text" title="Enable Notifications">
+        <i class="fa-regular fa-bell"></i> Enable Push
+      </button>
+      <button id="btn-test-notification" class="btn btn-primary btn-icon-text" title="Send a test notification">
+        <i class="fa-solid fa-paper-plane"></i> Test Notify
+      </button>
+      <button id="btn-new-task" class="btn btn-gradient btn-icon-text">
+        <i class="fa-solid fa-plus"></i> New Task
+      </button>
+    </div>
+  </header>
+
+  <main class="app-container">
+    <!-- Dashboard Stats Summary -->
+    <section class="dashboard-stats">
+      <div class="stat-card">
+        <div class="stat-icon purple"><i class="fa-solid fa-clock-history"></i></div>
+        <div class="stat-info">
+          <span class="stat-label">Todo</span>
+          <span class="stat-value" id="count-todo">0</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue"><i class="fa-solid fa-spinner fa-spin-pulse"></i></div>
+        <div class="stat-info">
+          <span class="stat-label">In Progress</span>
+          <span class="stat-value" id="count-progress">0</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
+        <div class="stat-info">
+          <span class="stat-label">Completed</span>
+          <span class="stat-value" id="count-completed">0</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon gold"><i class="fa-solid fa-percentage"></i></div>
+        <div class="stat-info">
+          <span class="stat-label">Progress</span>
+          <span class="stat-value" id="count-ratio">0%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Kanban Board Section -->
+    <section class="kanban-board">
+      
+      <!-- Todo Column -->
+      <div class="kanban-column" id="col-todo" data-status="todo">
+        <div class="column-header">
+          <div class="col-title-group">
+            <span class="status-indicator todo"></span>
+            <h3>To Do</h3>
+            <span class="col-count" id="badge-todo">0</span>
+          </div>
+        </div>
+        <div class="column-cards" id="cards-todo">
+          <!-- Cards injected by JS -->
+          <div class="loading-placeholder">
+            <i class="fa-solid fa-circle-notch fa-spin"></i> Loading Tasks...
+          </div>
+        </div>
+      </div>
+
+      <!-- In Progress Column -->
+      <div class="kanban-column" id="col-progress" data-status="progress">
+        <div class="column-header">
+          <div class="col-title-group">
+            <span class="status-indicator progress"></span>
+            <h3>In Progress</h3>
+            <span class="col-count" id="badge-progress">0</span>
+          </div>
+        </div>
+        <div class="column-cards" id="cards-progress">
+          <!-- Cards injected by JS -->
+        </div>
+      </div>
+
+      <!-- Completed Column -->
+      <div class="kanban-column" id="col-completed" data-status="completed">
+        <div class="column-header">
+          <div class="col-title-group">
+            <span class="status-indicator completed"></span>
+            <h3>Completed</h3>
+            <span class="col-count" id="badge-completed">0</span>
+          </div>
+        </div>
+        <div class="column-cards" id="cards-completed">
+          <!-- Cards injected by JS -->
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Modal for Creating & Editing Tasks -->
+  <div class="modal-backdrop hidden" id="task-modal">
+    <div class="modal-content glassmorphism">
+      <div class="modal-header">
+        <h2 id="modal-title">Create New Task</h2>
+        <button class="btn-close" id="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="task-form" class="modal-form">
+        <input type="hidden" id="task-id">
+        
+        <div class="form-group">
+          <label for="task-title">Task Title</label>
+          <input type="text" id="task-title" required placeholder="Enter task title..." maxlength="60">
+        </div>
+        
+        <div class="form-group">
+          <label for="task-desc">Description</label>
+          <textarea id="task-desc" placeholder="Provide some detailed context..." rows="4"></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="task-category">Category</label>
+            <select id="task-category">
+              <option value="Personal">Personal</option>
+              <option value="Work">Work</option>
+              <option value="Urgent">Urgent</option>
+              <option value="Shopping">Shopping</option>
+              <option value="Study">Study</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="task-date">Due Date</label>
+            <input type="date" id="task-date" required>
+          </div>
+        </div>
+
+        <div class="form-group hidden" id="form-group-status">
+          <label for="task-status">Status</label>
+          <select id="task-status">
+            <option value="todo">To Do</option>
+            <option value="progress">In Progress</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-task">Cancel</button>
+          <button type="submit" class="btn btn-gradient">Save Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Dynamic Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Client-side Javascript -->
+  <script src="/app.js"></script>
+</body>
+</html>
